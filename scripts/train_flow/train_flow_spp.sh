@@ -23,7 +23,7 @@ dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="car"
 
 num_channels=3
-batch_size=5
+batch_size=8
 workers=4
 nepoch=100
 
