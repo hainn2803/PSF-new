@@ -1,0 +1,7 @@
+matplotlib==2.2.5
+numpy==1.23.1
+tqdm==4.66.4
+open3d==0.10.0
+trimesh==3.7.12
+scipy==1.5.1
+ninja==1.10.2
