@@ -1,7 +1,7 @@
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="car"
 
-num_classes=1
+num_classes=3
 batch_size=5
 workers=4
 nepoch=100
