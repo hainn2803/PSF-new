@@ -120,10 +120,10 @@ class PVCNN2(PVCNN2Base):
         ((128, 128, 64), (64, 2, 32)),
     ]
 
-    def __init__(self, num_channels, embed_dim, use_att,dropout, extra_feature_channels=3, width_multiplier=1,
+    def __init__(self, num_classes, embed_dim, use_att,dropout, extra_feature_channels=3, width_multiplier=1,
                  voxel_resolution_multiplier=1):
         super().__init__(
-            num_channels=num_channels, embed_dim=embed_dim, use_att=use_att,
+            num_classes=num_classes, embed_dim=embed_dim, use_att=use_att,
             dropout=dropout, extra_feature_channels=extra_feature_channels,
             width_multiplier=width_multiplier, voxel_resolution_multiplier=voxel_resolution_multiplier
         )
@@ -134,7 +134,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.flow = Flowmodel(args)
 
-        self.model = PVCNN2(num_channels=args.num_channels, embed_dim=args.embed_dim, use_att=args.attention,
+        self.model = PVCNN2(num_classes=args.num_channels, embed_dim=args.embed_dim, use_att=args.attention,
                             dropout=args.dropout, extra_feature_channels=0)
 
 
