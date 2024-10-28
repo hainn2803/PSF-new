@@ -115,3 +115,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 syn/
+output/
+metrics/
+datasets/
+model/
+modules/
+utils/
