@@ -16,20 +16,24 @@ module load python/miniconda3/miniconda3
 # Corrected line
 eval "$(conda shell.bash hook)"
 
-conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF
-cd /lustre/scratch/client/vinai/users/hainn14/PSF
+conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF2
+cd /lustre/scratch/client/vinai/users/hainn14/PSF2
 
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="car"
-num_classes=1
-batch_size=32
-workers=8
+
+num_classes=3
+batch_size=5
+workers=4
 nepoch=100
-dist="multi"
+
+dist="single"
+
 save_epoch=10
 viz_epoch=10
 diag_epoch=10
 print_freq=100
+
 python3 train_flow.py --category "$category" \
                     --dataroot "$dataroot" \
                     --num_classes $num_classes \
