@@ -22,7 +22,7 @@ cd /lustre/scratch/client/vinai/users/hainn14/PSF2
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="car"
 
-num_classes=3
+num_channels=3
 batch_size=5
 workers=4
 nepoch=100
@@ -36,7 +36,7 @@ print_freq=100
 
 python3 train_flow.py --category "$category" \
                     --dataroot "$dataroot" \
-                    --num_classes $num_classes \
+                    --num_channels $num_channels \
                     --batch_size $batch_size \
                     --workers $workers \
                     --nEpochs $nepoch \

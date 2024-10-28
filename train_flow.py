@@ -120,10 +120,10 @@ class PVCNN2(PVCNN2Base):
         ((128, 128, 64), (64, 2, 32)),
     ]
 
-    def __init__(self, num_classes, embed_dim, use_att,dropout, extra_feature_channels=3, width_multiplier=1,
+    def __init__(self, num_channels, embed_dim, use_att,dropout, extra_feature_channels=3, width_multiplier=1,
                  voxel_resolution_multiplier=1):
         super().__init__(
-            num_classes=num_classes, embed_dim=embed_dim, use_att=use_att,
+            num_channels=num_channels, embed_dim=embed_dim, use_att=use_att,
             dropout=dropout, extra_feature_channels=extra_feature_channels,
             width_multiplier=width_multiplier, voxel_resolution_multiplier=voxel_resolution_multiplier
         )
@@ -134,7 +134,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.flow = Flowmodel(args)
 
-        self.model = PVCNN2(num_classes=args.num_classes, embed_dim=args.embed_dim, use_att=args.attention,
+        self.model = PVCNN2(num_channels=args.num_channels, embed_dim=args.embed_dim, use_att=args.attention,
                             dropout=args.dropout, extra_feature_channels=0)
 
 
@@ -481,7 +481,7 @@ def main():
 
     ''' workaround '''
     train_dataset, _ = get_dataset(opt.dataroot, opt.npoints, opt.category)
-    noises_init = torch.randn(len(train_dataset), opt.npoints, opt.num_classes)
+    noises_init = torch.randn(len(train_dataset), opt.npoints, opt.num_channels)
 
     if opt.dist_url == "env://" and opt.world_size == -1:
         opt.world_size = int(os.environ["WORLD_SIZE"])
@@ -504,7 +504,7 @@ def parse_args():
     parser.add_argument('--workers', type=int, default=16, help='workers')
     parser.add_argument('--nEpochs', type=int, default=20000, help='number of epochs to train for, unit: epoch')
 
-    parser.add_argument('--num_classes', type=int, default=3)
+    parser.add_argument('--num_channels', type=int, default=3)
     parser.add_argument('--npoints', type=int, default=2048)
 
     '''model'''
