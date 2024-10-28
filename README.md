@@ -36,6 +36,13 @@ python setup.py install
 cp build/**/emd_cuda.cpython-36m-x86_64-linux-gnu.so .
 ```
 
+How to fix Ninja returned non-zero exit status 1:
+
+#include <THC/THC.h> 
+Repalce all AT_CHECK with TORCH_CHECK 
+Replace all THCudaCheck with C10_CUDA_CHECK 
+Replace all CHECK_EQ with TORCH_CHECK_EQ
+
 
 ## Data
 
