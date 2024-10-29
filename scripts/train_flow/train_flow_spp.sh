@@ -1,7 +1,7 @@
 #!/bin/bash -e
-#SBATCH --job-name=PSF
-#SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF/spp_noti/train_flow.out
-#SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF/spp_noti/train_flow.err
+#SBATCH --job-name=PSF-new
+#SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow.out
+#SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow.err
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=2
 #SBATCH --mem-per-gpu=125G
@@ -17,7 +17,7 @@ module load python/miniconda3/miniconda3
 eval "$(conda shell.bash hook)"
 
 conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF2
-cd /lustre/scratch/client/vinai/users/hainn14/PSF2
+cd /lustre/scratch/client/vinai/users/hainn14/PSF-new
 
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="car"
