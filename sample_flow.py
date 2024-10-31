@@ -576,7 +576,7 @@ def train(gpu, opt, output_dir, noises_init):
                 x = x.cuda()
                 noises_batch = noises_batch.cuda()
             break
-
+        
 
         if 1:
             logger.info('Generation: eval')

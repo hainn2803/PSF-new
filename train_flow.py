@@ -1,3 +1,4 @@
+import torch
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
@@ -11,7 +12,6 @@ from utils.visualize import *
 from model.pvcnn_generation import PVCNN2Base
 import torch.distributed as dist
 from datasets.shapenet_data_pc import ShapeNet15kPointClouds
-
 
 class Flowmodel:
     def __init__(self, opt):
@@ -134,7 +134,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.flow = Flowmodel(args)
 
-        self.model = PVCNN2(num_classes=args.nc, embed_dim=args.embed_dim, use_att=args.attention,
+        self.model = PVCNN2(num_classes=args.num_channels, embed_dim=args.embed_dim, use_att=args.attention,
                             dropout=args.dropout, extra_feature_channels=0)
 
 
@@ -251,11 +251,11 @@ def get_dataloader(opt, train_dataset, test_dataset=None):
         train_sampler = None
         test_sampler = None
 
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.bs,sampler=train_sampler,
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.batch_size,sampler=train_sampler,
                                                    shuffle=train_sampler is None, num_workers=int(opt.workers), drop_last=True)
 
     if test_dataset is not None:
-        test_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.bs,sampler=test_sampler,
+        test_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.batch_size,sampler=test_sampler,
                                                    shuffle=False, num_workers=int(opt.workers), drop_last=False)
     else:
         test_dataloader = None
@@ -283,12 +283,12 @@ def train(gpu, opt, output_dir, noises_init):
         dist.init_process_group(backend=opt.dist_backend, init_method=opt.dist_url,
                                 world_size=opt.world_size, rank=opt.rank)
 
-        opt.bs = int(opt.bs / opt.ngpus_per_node)
+        opt.batch_size = int(opt.batch_size / opt.ngpus_per_node)
         opt.workers = 0
 
-        opt.saveIter =  int(opt.saveIter / opt.ngpus_per_node)
-        opt.diagIter = int(opt.diagIter / opt.ngpus_per_node)
-        opt.vizIter = int(opt.vizIter / opt.ngpus_per_node)
+        opt.saveEpoch =  int(opt.saveEpoch / opt.ngpus_per_node)
+        opt.diagEpoch = int(opt.diagEpoch / opt.ngpus_per_node)
+        opt.vizEpoch = int(opt.vizEpoch / opt.ngpus_per_node)
 
 
     ''' data '''
@@ -304,6 +304,7 @@ def train(gpu, opt, output_dir, noises_init):
     model = Model(opt, betas, opt.loss_type, opt.model_mean_type, opt.model_var_type)
 
     if opt.distribution_type == 'multi':  # Multiple processes, single GPU per process
+        # Purpose: Uses DistributedDataParallel to parallelize the model across multiple processes, each using a single GPU.
         def _transform_(m):
             return nn.parallel.DistributedDataParallel(
                 m, device_ids=[gpu], output_device=gpu)
@@ -314,12 +315,14 @@ def train(gpu, opt, output_dir, noises_init):
 
 
     elif opt.distribution_type == 'single':
+        # Purpose: Uses DataParallel to parallelize the model across multiple GPUs within a single process.
         def _transform_(m):
             return nn.parallel.DataParallel(m)
         model = model.cuda()
         model.multi_gpu_wrapper(_transform_)
 
     elif gpu is not None:
+        # Purpose: Runs the model on a single specified GPU.
         torch.cuda.set_device(gpu)
         model = model.cuda(gpu)
     else:
@@ -338,7 +341,7 @@ def train(gpu, opt, output_dir, noises_init):
         #optimizer.load_state_dict(ckpt['optimizer_state'])
 
     if opt.model != '':
-        start_epoch = 0#torch.load(opt.model)['epoch'] + 1
+        start_epoch = torch.load(opt.model)['epoch'] + 1
     else:
         start_epoch = 0
 
@@ -347,7 +350,7 @@ def train(gpu, opt, output_dir, noises_init):
 
 
 
-    for epoch in range(start_epoch, opt.niter):
+    for epoch in range(start_epoch, opt.nEpochs):
 
         if opt.distribution_type == 'multi':
             train_sampler.set_epoch(epoch)
@@ -356,10 +359,9 @@ def train(gpu, opt, output_dir, noises_init):
 
         for i, data in enumerate(dataloader):
             
-            x = data['train_points'].transpose(1,2)
+            x = data['train_points'].transpose(1,2) # shape == (num_samples, 3, 2048)
             
-            noises_batch = noises_init[data['idx']].transpose(1,2)
-
+            noises_batch = noises_init[data['idx']].transpose(1,2) # shape == (num_samples, 3, 2048)
 
             if opt.distribution_type == 'multi' or (opt.distribution_type is None and gpu is not None):
                 x = x.cuda(gpu)
@@ -378,17 +380,24 @@ def train(gpu, opt, output_dir, noises_init):
 
             optimizer.step()
 
+            if should_diag:
 
-            if i % opt.print_freq == 0 and should_diag:
+                cac = False
+                if i < opt.printFreqIter and i + 1 == len(dataloader):
+                    cac = True
+                    
+                elif i > opt.printFreqIter and i % opt.printFreqIter == 0:
+                    cac = True
 
-                logger.info('[{:>3d}/{:>3d}][{:>3d}/{:>3d}]    loss: {:>10.4f},    '
-                             .format(
-                        epoch, opt.niter, i, len(dataloader),loss.item()
-                        ))
+                if cac:
 
+                    logger.info('[{:>3d}/{:>3d}][{:>3d}/{:>3d}]    loss: {:>10.4f},    '
+                                .format(
+                            epoch, opt.nEpochs, i, len(dataloader),loss.item()
+                            ))
 
-        
-        if (epoch + 1) % opt.vizIter == 0 and should_diag:
+        print(f"Epoch cac: {epoch}, {(epoch + 1) % opt.vizEpoch == 0}, {should_diag}")
+        if (epoch + 1) % opt.vizEpoch == 0 and should_diag:
             logger.info('Generation: eval')
 
             model.eval()
@@ -406,7 +415,7 @@ def train(gpu, opt, output_dir, noises_init):
                              'eval_gen_range: [{:>10.4f}, {:>10.4f}]     '
                              'eval_gen_stats: [mean={:>10.4f}, std={:>10.4f}]      '
                     .format(
-                    epoch, opt.niter,
+                    epoch, opt.nEpochs,
                     *gen_eval_range, *gen_stats,
                 ))
 
@@ -427,9 +436,7 @@ def train(gpu, opt, output_dir, noises_init):
             model.train()
 
 
-
-
-        if (epoch + 1) % opt.saveIter == 0:
+        if (epoch + 1) % opt.saveEpoch == 0:
 
             if should_diag:
 
@@ -449,9 +456,15 @@ def train(gpu, opt, output_dir, noises_init):
                 model.load_state_dict(
                     torch.load('%s/epoch_%d.pth' % (output_dir, epoch), map_location=map_location)['model_state'])
 
-    dist.destroy_process_group()
+    n_gpus = torch.cuda.device_count()
+    if n_gpus >= 2:
+        dist.destroy_process_group()
 
 def main():
+    
+    n_gpus = torch.cuda.device_count()
+    print(f"Number of GPUs used: {n_gpus}")
+    
     opt = parse_args()
     if 1:
         opt.beta_start = 1e-5
@@ -465,7 +478,7 @@ def main():
 
     ''' workaround '''
     train_dataset, _ = get_dataset(opt.dataroot, opt.npoints, opt.category)
-    noises_init = torch.randn(len(train_dataset), opt.npoints, opt.nc)
+    noises_init = torch.randn(len(train_dataset), opt.npoints, opt.num_channels)
 
     if opt.dist_url == "env://" and opt.world_size == -1:
         opt.world_size = int(os.environ["WORLD_SIZE"])
@@ -478,26 +491,26 @@ def main():
         train(opt.gpu, opt, output_dir, noises_init)
 
 
-
 def parse_args():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataroot', default='./ShapeNetCore.v2.PC15k/')
+    parser.add_argument('--dataroot', default='datasets/ShapeNetCore.v2.PC15k/')
     parser.add_argument('--category', default='car')
 
-    parser.add_argument('--bs', type=int, default=96, help='input batch size')
+    parser.add_argument('--batch_size', type=int, default=96, help='input batch size')
     parser.add_argument('--workers', type=int, default=16, help='workers')
-    parser.add_argument('--niter', type=int, default=20000, help='number of epochs to train for')
+    parser.add_argument('--nEpochs', type=int, default=20000, help='number of epochs to train for, unit: epoch')
 
-    parser.add_argument('--nc', default=3)
-    parser.add_argument('--npoints', default=2048)
+    parser.add_argument('--num_channels', type=int, default=3)
+    parser.add_argument('--npoints', type=int, default=2048)
+
     '''model'''
-    parser.add_argument('--beta_start', default=0.0001)
-    parser.add_argument('--beta_end', default=0.02)
-    parser.add_argument('--schedule_type', default='linear')
-    parser.add_argument('--time_num', default=1000)
+    parser.add_argument('--beta_start', type=float, default=0.0001)
+    parser.add_argument('--beta_end', type=float, default=0.02)
+    parser.add_argument('--schedule_type', type=str, default='linear')
+    parser.add_argument('--time_num', type=int, default=1000)
 
-    #params
+    '''params'''
     parser.add_argument('--attention', default=True)
     parser.add_argument('--dropout', default=0.1)
     parser.add_argument('--embed_dim', type=int, default=64)
@@ -521,7 +534,7 @@ def parse_args():
                         help='url used to set up distributed training')
     parser.add_argument('--dist_backend', default='nccl', type=str,
                         help='distributed backend')
-    parser.add_argument('--distribution_type', default='multi', choices=['multi', 'single', None],
+    parser.add_argument('--distribution_type', default=None, choices=['multi', 'single', None],
                         help='Use multi-processing distributed training to launch '
                              'N processes per node, which has N GPUs. This is the '
                              'fastest way to use PyTorch for either single node or '
@@ -532,10 +545,10 @@ def parse_args():
                         help='GPU id to use. None means using all available GPUs.')
 
     '''eval'''
-    parser.add_argument('--saveIter', default=100, help='unit: epoch')
-    parser.add_argument('--diagIter', default=100, help='unit: epoch')
-    parser.add_argument('--vizIter', default=100, help='unit: epoch')
-    parser.add_argument('--print_freq', default=50, help='unit: iter')
+    parser.add_argument('--saveEpoch', default=100, type=int, help='unit: epoch')
+    parser.add_argument('--diagEpoch', default=100, type=int, help='unit: epoch')
+    parser.add_argument('--vizEpoch', default=100, type=int, help='unit: epoch')
+    parser.add_argument('--printFreqIter', default=100, type=int, help='unit: iter')
 
     parser.add_argument('--manualSeed', default=42, type=int, help='random seed')
 
@@ -544,5 +557,16 @@ def parse_args():
 
     return opt
 
+def print_gpu_info():
+    if not torch.cuda.is_available():
+        print("No GPU available")
+    else:
+        num_gpus = torch.cuda.device_count()
+        print(f"Number of GPUs available: {num_gpus}")
+        for i in range(num_gpus):
+            print(f"GPU {i}: {torch.cuda.get_device_name(i)}")
+
+
 if __name__ == '__main__':
+    print_gpu_info()
     main()
