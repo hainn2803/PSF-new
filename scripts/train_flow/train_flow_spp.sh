@@ -3,7 +3,7 @@
 #SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.out
 #SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.err
 #SBATCH --nodes=1
-#SBATCH --gpus-per-node=2
+#SBATCH --gpus-per-node=3
 #SBATCH --mem-per-gpu=125G
 #SBATCH --cpus-per-gpu=32
 #SBATCH --partition=research
