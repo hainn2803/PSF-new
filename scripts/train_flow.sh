@@ -1,18 +1,18 @@
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
-category="car"
+category="airplane"
 
 num_channels=3
-batch_size=5
+batch_size=3
 workers=4
-nepoch=200
+nepoch=2
 dist="single"
 
-save_epoch=10
-viz_epoch=10
-diag_epoch=10
+save_epoch=1
+viz_epoch=1
+diag_epoch=1
 print_freq=100
 
-CUDA_VISIBLE_DEVICES=4 python3 train_flow.py --category "$category" \
+CUDA_VISIBLE_DEVICES=2 python3 train_flow.py --category "$category" \
                     --dataroot "$dataroot" \
                     --num_channels $num_channels \
                     --batch_size $batch_size \
