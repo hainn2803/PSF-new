@@ -25,12 +25,12 @@ category="plane"
 num_channels=3
 batch_size=256
 workers=16
-nepoch=200
+nepoch=20000
 dist="multi"
 
-save_epoch=10
-viz_epoch=10
-diag_epoch=10
+save_epoch=1000
+viz_epoch=1000
+diag_epoch=1000
 print_freq=100
 
 python3 train_flow.py --category "$category" \
