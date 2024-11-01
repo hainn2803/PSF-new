@@ -20,7 +20,7 @@ conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF
 cd /lustre/scratch/client/vinai/users/hainn14/PSF-new
 
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
-category="plane"
+category="airplane"
 
 num_channels=3
 batch_size=256
