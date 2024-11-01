@@ -3,7 +3,7 @@
 #SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.out
 #SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.err
 #SBATCH --nodes=1
-#SBATCH --gpus-per-node=3
+#SBATCH --gpus-per-node=2
 #SBATCH --mem-per-gpu=125G
 #SBATCH --cpus-per-gpu=32
 #SBATCH --partition=research
@@ -25,7 +25,7 @@ category="airplane"
 num_channels=3
 batch_size=128
 workers=16
-nepoch=20000
+nepoch=40000
 dist="multi"
 
 save_epoch=1000
