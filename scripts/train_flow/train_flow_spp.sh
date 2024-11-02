@@ -23,9 +23,9 @@ dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="airplane"
 
 num_channels=3
-batch_size=128
+batch_size=256
 workers=16
-nepoch=40000
+nepoch=20000
 dist="multi"
 
 save_epoch=1000
