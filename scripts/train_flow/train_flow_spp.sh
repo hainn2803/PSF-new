@@ -1,7 +1,7 @@
 #!/bin/bash -e
-#SBATCH --job-name=PSF-new
-#SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow.out
-#SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow.err
+#SBATCH --job-name=PSF-sbatch
+#SBATCH --output=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.out
+#SBATCH --error=/lustre/scratch/client/vinai/users/hainn14/PSF-new/spp_noti/train_flow_spp.err
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=3
 #SBATCH --mem-per-gpu=125G
@@ -16,22 +16,21 @@ module load python/miniconda3/miniconda3
 # Corrected line
 eval "$(conda shell.bash hook)"
 
-conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF2
+conda activate /lustre/scratch/client/vinai/users/hainn14/envs/PSF
 cd /lustre/scratch/client/vinai/users/hainn14/PSF-new
 
 dataroot="datasets/ShapeNetCore.v2.PC15k/"
 category="airplane"
 
 num_channels=3
-batch_size=8
-workers=4
-nepoch=100
+batch_size=128
+workers=16
+nepoch=40000
+dist="multi"
 
-dist="single"
-
-save_epoch=10
-viz_epoch=10
-diag_epoch=10
+save_epoch=1000
+viz_epoch=1000
+diag_epoch=1000
 print_freq=100
 
 python3 train_flow.py --category "$category" \
